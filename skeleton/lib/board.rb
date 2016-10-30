@@ -15,7 +15,6 @@ class Board
     @cursor_pos = [0,0]
     @message = ""
     @hand = []
-    @old_position = nil
     setup
   end
 
@@ -87,7 +86,7 @@ class Board
   def get_stack(tab_num, index)
     @hand = tableaus[tab_num].grab(index)
     old_position = [tab_num, index]
-    message = ""
+    set_message("")
     cursor_pos[0] -= 1 if cursor_pos[0] > lower_limit
   end
 
@@ -104,7 +103,7 @@ class Board
 
   def place_on_tab(tab_num)
     tableaus[tab_num].add_cards(hand)
-    old_position = nil
+    set_message("")
   end
 
   def place_in_freecells(index)
@@ -114,12 +113,14 @@ class Board
     card = hand.first
     freecells[index] = card
     @hand = []
+    set_message("")
   end
 
   def get_freecell(index)
     raise UserError.new("no card there") if freecells[index].nil?
     @hand = [freecells[index]]
     freecells[index] = nil
+    set_message("")
   end
 
   def place_in_foundations(index)
@@ -135,6 +136,7 @@ class Board
     end
     foundations[index] << card
     @hand = []
+    set_message("")
   end
 
   def render_header
