@@ -56,8 +56,7 @@ class Card
 
   def stackable?(card)
     raise UserError.new("card is a king") if value == :king
-    return false if color == card.color || card.num != num + 1
-    true
+    color == card.color || card.num != num + 1 ? false : true
   end
 
   def display(bg_color = :white)

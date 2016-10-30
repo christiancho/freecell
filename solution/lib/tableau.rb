@@ -8,7 +8,7 @@ class Tableau
   end
 
   def add_cards(cards)
-    unless empty? || cards.first.stackable?(last) || replaceable?(cards)
+    unless empty? || cards.first.stackable?(last) || @cards_taken == cards
       raise UserError.new("card(s) cannot be stacked on this tableau")
     else
       until cards.empty? do
@@ -47,13 +47,5 @@ class Tableau
   def count
     @cards.length
   end
-
-  private
-
-  def replaceable?(cards)
-    @cards_taken == cards
-  end
-
-  attr_accessor :card_taken
 
 end
