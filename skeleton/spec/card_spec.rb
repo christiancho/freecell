@@ -1,15 +1,10 @@
 require 'rspec'
 require 'card'
+require_relative 'card_mocks'
 
 describe "Card" do
 
-  subject(:ace_of_spades) { Card.new(:ace, :spade) }
-  subject(:four_of_clubs) { Card.new(:four, :club) }
-  subject(:ten_of_hearts) { Card.new(:ten, :heart) }
-  subject(:queen_of_diamonds) { Card.new(:queen, :diamond) }
-  subject(:jack_of_clubs) { Card.new(:jack, :club) }
-  subject(:nine_of_spades) { Card.new(:nine, :spade) }
-  subject(:king_of_hearts) { Card.new(:king, :heart) }
+  generate_mocks
 
   context "when creating a new instance" do
     it "takes a value and a suit" do
@@ -62,7 +57,7 @@ describe "Card" do
     it "raises an error if called on a king card" do
       expect do
         king_of_hearts.stackable?(ace_of_spades)
-      end.to raise_error("card is a king")
+      end.to raise_error(UserError, "card is a king")
     end
   end
 

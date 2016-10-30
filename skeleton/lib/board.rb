@@ -1,3 +1,4 @@
+require 'byebug'
 require_relative 'tableau'
 require_relative 'cursorable'
 
@@ -5,9 +6,7 @@ class Board
 
   include Cursorable
 
-  attr_accessor :tableaus, :hand
-
-  attr_reader :freecells, :foundations, :message, :cursor_pos
+  attr_reader :foundations, :freecells, :tableaus
 
   def initialize
     @tableaus = Array.new(8)
@@ -29,28 +28,12 @@ class Board
     print "\n"
     render_tableaus
     render_message
-    p cursor_pos
-    print "Hand "
-    print hand
-  end
-
-  def lower_limit
-    @tableaus.max_by(&:count).count
+    print "\n"
+    show_hand
   end
 
   def won?
-    @tableaus.all? { |tab| tab.empty? } && @freecells.empty?
-  end
-
-  def inspect
-    render
-  end
-
-  def in_bounds?(pos)
-    x, y = pos
-    return false if x < 0 || y < 0 || y > 7
-    return false if x > lower_limit
-    true
+    @foundations.flatten.length == 52
   end
 
   def move!
@@ -62,25 +45,32 @@ class Board
         else
           place_in_freecells(y)
         end
-      elsif x == 0 && y >3
+      elsif x == 0 && y > 3
         if hand.empty?
-          raise "you cannot move foundation cards"
+          raise UserError.new("you cannot move foundation cards")
         else
-          place_in_foundations(y)
+          place_in_foundations(y - 4)
         end
       else
         if hand.empty?
-          get_stack(y, x + 1)
+          get_stack(y, x - 1)
         else
-          place_on_tab(y, x + 1)
+          place_on_tab(y)
         end
       end
-    rescue => error
+    rescue UserError => error
       set_message(error.message)
     end
   end
 
+  def set_message(new_message)
+    @message = new_message
+  end
+
   private
+
+  attr_accessor :hand, :cursor_pos, :message
+  attr_writer :foundations, :freecells, :tableaus
 
   def setup
     cards = Card.all_cards
@@ -95,42 +85,56 @@ class Board
   end
 
   def get_stack(tab_num, index)
-    hand = tableaus[tab_num].grab(index)
+    @hand = tableaus[tab_num].grab(index)
     old_position = [tab_num, index]
+    message = ""
+    cursor_pos[0] -= 1 if cursor_pos[0] > lower_limit
+  end
+
+  def in_bounds?(pos)
+    x, y = pos
+    return false if x < 0 || y < 0 || y > 7
+    return false if x > lower_limit
+    true
+  end
+
+  def lower_limit
+    @tableaus.max_by(&:count).count
   end
 
   def place_on_tab(tab_num)
-    tableaus[tab_num] << hand
+    tableaus[tab_num].add_cards(hand)
     old_position = nil
   end
 
   def place_in_freecells(index)
-    raise "invalid move" if hand.length > 1
-    raise "no more freecells left" if freecells.none? { |space| space.nil? }
+    raise UserError.new("invalid move") if hand.length > 1
+    raise UserError.new("freecell is taken") unless freecells[index].nil?
+    raise UserError.new("no more freecells left") if freecells.none? { |space| space.nil? }
     card = hand.first
     freecells[index] = card
-    hand = nil
+    @hand = []
   end
 
   def get_freecell(index)
-    raise "no card there" if freecells[index].nil?
-    freecells.slice!(index)
+    raise UserError.new("no card there") if freecells[index].nil?
+    @hand = [freecells[index]]
+    freecells[index] = nil
   end
 
   def place_in_foundations(index)
-    raise "only one card at a time" if cards.length > 1
+    raise UserError.new("only one card at a time") if hand.length > 1
     card = hand.first
-    top_card = foundations[index]
+    if foundations[index].empty? && card.value != :ace
+      raise UserError.new("only aces can be placed in open foundation piles")
+    end
+    top_card = foundations[index].last
     unless (foundations[index].empty? && card.value == :ace) ||
-      (top_card.value == card.value - 1 && top_card.suit == card.suit)
-      raise "card cannot be placed in foundation piles"
+      (top_card.num == card.num - 1 && top_card.suit == card.suit)
+      raise UserError.new("card cannot be placed in that pile")
     end
     foundations[index] << card
-    hand = nil
-  end
-
-  def set_message(message)
-    @message = message
+    @hand = []
   end
 
   def render_header
@@ -148,7 +152,7 @@ class Board
     4.times do |index|
       print " "
       element = freecells[index]
-      if @cursor_pos[0] == 0 && @cursor_pos[1] == index
+      if cursor_pos[0] == 0 && cursor_pos[1] == index
         render_unit(element, :yellow)
       else
         render_unit(element)
@@ -161,7 +165,7 @@ class Board
     4.times do |index|
       print "  "
       element = foundations[index]
-      if @cursor_pos[0] == 0 && @cursor_pos[1] == index + 4
+      if cursor_pos[0] == 0 && cursor_pos[1] == index + 4
         render_unit(element.last, :yellow)
       else
         render_unit(element.last)
@@ -204,7 +208,17 @@ class Board
 
   def render_message
     print " Message: "
-    puts @message.colorize(:light_green)
+    puts message.colorize(:light_green)
+  end
+
+  def show_hand
+    return if @hand.empty?
+    print "Moving: "
+    @hand.each do |card|
+      render_unit(card)
+      print " "
+    end
+    print "\n"
   end
 
 end

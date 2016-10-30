@@ -1,4 +1,5 @@
 require 'colorize'
+require_relative 'errors'
 
 class Card
 
@@ -54,7 +55,7 @@ class Card
   end
 
   def stackable?(card)
-    raise "card is a king" if value == :king
+    raise UserError.new("card is a king") if value == :king
     return false if color == card.color || card.num != num + 1
     true
   end
