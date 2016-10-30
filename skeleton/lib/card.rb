@@ -3,6 +3,8 @@ require_relative 'errors'
 
 class Card
 
+  # check the protected methods and assets!
+
   def self.suits
     [:spade, :diamond, :club, :heart]
   end
