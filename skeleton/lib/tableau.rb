@@ -36,10 +36,4 @@ class Tableau
 
   private
 
-  def replaceable?(cards)
-    @cards_taken == cards
-  end
-
-  attr_accessor :card_taken
-
 end
