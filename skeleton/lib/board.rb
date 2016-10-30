@@ -85,16 +85,13 @@ class Board
 
   def get_stack(tab_num, index)
     @hand = tableaus[tab_num].grab(index)
-    old_position = [tab_num, index]
     set_message("")
     cursor_pos[0] -= 1 if cursor_pos[0] > lower_limit
   end
 
   def in_bounds?(pos)
     x, y = pos
-    return false if x < 0 || y < 0 || y > 7
-    return false if x > lower_limit
-    true
+    x < 0 || x > lower_limit || y < 0 || y > 7 ? false : true
   end
 
   def lower_limit
